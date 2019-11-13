@@ -1,75 +1,64 @@
 version: 2
-executorType: docker
 jobs:
-  build-app:
-    resource_class: medium
-    environment:
-      - GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError"'
-      - REACT_NATIVE_MAX_WORKERS: 2
-      - ANDROID_BUILD_TOOLS_VERSION: '28.0.3'
-    working_directory: ~/app
+  build:
     docker:
-      - image: reactnativecommunity/react-native-android
+      - image: circleci/android:api-28-node
+    environment:
+      _JAVA_OPTIONS: -Xmx3g
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+      TERM: "dumb"
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-npm-{{ .Branch }}-{{ checksum "yarn.lock" }}
-            - v1-npm
+            - v1-yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum "example/yarn.lock" }}
+            - v1-yarn-cache-{{ .Branch }}-
+            - v1-yarn-cache-
       - run:
-          name: Install Dependencies
-          command: yarn install --frozen-lockfile --non-interactive
-      - save_cache:
-          key: v1-npm
-          paths:
-            - node_modules/
-      - save_cache:
-          key: v1-npm-{{ .Branch }}-{{ checksum "yarn.lock" }}
-          paths:
-            - node_modules/
-      - run:
-          name: Lint
-          command: yarn lint
+          name: yarn
+          command: yarn --frozen-lockfile --non-interactive
+      - run: yarn lint
+      - run: yarn validate
       - restore_cache:
           keys:
-            - v1-gradle-{{ checksum "android/gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
-            - v1-gradle-wrapper
+            - v1-gradle-caches-{{ checksum "android/build.gradle" }}-{{ checksum "example/android/build.gradle" }}
       - restore_cache:
           keys:
-            - v1-gradle-cache-{{ checksum "android/build.gradle" }}-{{ checksum "example/android/build.gradle" }}
-            - v1-gradle-cache
+            - v1-gradle-wrapper-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
       - run:
-          name: Run Checks
-          command: |
-            cd android
-            chmod +x ./gradlew
-            ./gradlew clean && ./gradlew && ./gradlew check
+          name: Preparing Gradle wrapper
+          command: cp -a example/android/{gradle,gradlew,gradlew.bat} android/
+      - run:
+          name: android/ ./gradlew check
+          working_directory: android/
+          command: ./gradlew check
       - store_artifacts:
-          path: android/build/reports
+          path: android/build/reports/
+          destination: reports
       - run:
-          name: Install dependencies of the example app
-          command: cd example && yarn install --frozen-lockfile --non-interactive
+          name: example/ yarn
+          working_directory: example/
+          command: yarn --frozen-lockfile --non-interactive
       - run:
-          name: Check for errors in the example app using Flow
-          command: |
-            cd example && yarn flow
+          name: example/ yarn flow
+          working_directory: example/
+          command: yarn flow
       - run:
-          name: Build Sample App
-          command: |
-            cd example/android && chmod +x ./gradlew && ./gradlew build
+          name: example/android/ ./gradlew build
+          working_directory: example/android/
+          command: ./gradlew build
       - store_artifacts:
           path: example/android/app/build/reports
-          destination: app
+          destination: reports/example
+      - save_cache:
+          key: v1-yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum "example/yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+      - save_cache:
+          key: v1-gradle-caches-{{ checksum "android/build.gradle" }}-{{ checksum "example/android/build.gradle" }}
+          paths:
+            - ~/.gradle/caches/
       - save_cache:
           key: v1-gradle-wrapper-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
           paths:
-            - ~/.gradle/wrapper
-      - save_cache:
-          key: v1-gradle-cache-{{ checksum "example/android/build.gradle" }}
-          paths:
-            - ~/.gradle/caches
-workflows:
-  version: 2
-  build-and-lint-app:
-    jobs:
-      - build-app
+            - ~/.gradle/wrapper/
