@@ -27,10 +27,10 @@ jobs:
           command: yarn lint
       - restore_cache:
           keys:
-            - v1-gradle-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
+            - v2-gradle-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
       - restore_cache:
           keys:
-            - v1-gradle-cache-{{ checksum "example/android/build.gradle" }}
+            - v2-gradle-cache-{{ checksum "example/android/build.gradle" }}
       - run:
           name: Reuse Gradle wrapper from example
           command: |
@@ -57,11 +57,11 @@ jobs:
           path: example/android/app/build/reports
           destination: app
       - save_cache:
-          key: v1-gradle-wrapper-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
+          key: v2-gradle-wrapper-{{ checksum "example/android/gradle/wrapper/gradle-wrapper.properties" }}
           paths:
             - ~/.gradle/wrapper/
       - save_cache:
-          key: v1-gradle-cache-{{ checksum "example/android/build.gradle" }}
+          key: v2-gradle-cache-{{ checksum "example/android/build.gradle" }}
           paths:
             - ~/.gradle/caches/
 workflows:
