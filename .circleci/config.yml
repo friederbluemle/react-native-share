@@ -9,7 +9,7 @@ jobs:
       - ANDROID_BUILD_TOOLS_VERSION: '28.0.3'
     working_directory: ~/app
     docker:
-      - image: reactnativecommunity/react-native-android
+      - image: circleci/android:api-28-node
     steps:
       - checkout
       - restore_cache:
