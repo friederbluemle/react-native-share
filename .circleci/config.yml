@@ -5,7 +5,7 @@ jobs:
       - image: circleci/android:api-28-node
     environment:
       _JAVA_OPTIONS: -Xmx3g
-      GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=2'
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
       TERM: "dumb"
     steps:
       - checkout
